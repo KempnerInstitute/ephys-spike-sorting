@@ -1,0 +1,35 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --mem=32GB
+#SBATCH --partition=<your-partition>
+#SBATCH --account=<your-Slurm-account> 
+#SBATCH --time=8:00:00
+#SBATCH --output=kilosort-%N.%x.%j.out
+#SBATCH --error=kilosort-%N.%x.%j.err
+
+DATA_PATH="location_of_your_data_dir"
+WORK_DIR="location_of_your_scratch_directory"
+PIPELINE_PATH="./"
+RESULTS_PATH="./output_dir"
+
+
+
+CONTAINER_DIR="/n/holylfs06/LABS/kempner_shared/Everyone/workflow/ephys-spike-sorting-2024/containers"
+
+INPUT_DATA_TYPE="spikeglx"
+
+module load Mambaforge/23.11.0-fasrc01
+mamba activate /n/holylfs06/LABS/kempner_shared/Everyone/workflow/ephys-spike-sorting-2024/versions/latest/software/nextflow_v22.10.6
+
+/n/holylfs06/LABS/kempner_shared/Everyone/workflow/ephys-spike-sorting-2024/cred/kachery_shared_setup.sh
+
+CONTAINER_DIR=$CONTAINER_DIR DATA_PATH=$DATA_PATH RESULTS_PATH=$RESULTS_PATH nextflow  -C $PIPELINE_PATH/nextflow_slurm.config \
+    -log $RESULTS_PATH/nextflow.log \
+    run $PIPELINE_PATH/main_slurm.nf \
+    -work-dir $WORK_DIR \
+    --n_jobs 4 \
+    --sorter kilosort4 \
+    --runmode fast \
+    --job_dispatch_args "--input $INPUT_DATA_TYPE"  
+    
+
