@@ -126,7 +126,7 @@ else if (sorter == 'spykingcircus2') {
 // capsule - Job Dispatch Ecephys
 process job_dispatch {
 	tag 'job-dispatch'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-base:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
 
 	cpus 4
 	memory '32 GB'
@@ -179,7 +179,7 @@ process job_dispatch {
 // capsule - Preprocess Ecephys
 process preprocessing {
 	tag 'preprocessing'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-base:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
 
 	cpus 16
 	memory '64 GB'
@@ -229,7 +229,7 @@ process preprocessing {
 // capsule - Spikesort Kilosort2.5 Ecephys
 process spikesort_kilosort25 {
 	tag 'spikesort-kilosort25'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-spikesort-kilosort25:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-spikesort-kilosort25_si-0.101.2.sif'
 	containerOptions '--nv'
 	clusterOptions '--gres=gpu:1'
 	module 'cuda'
@@ -281,7 +281,7 @@ process spikesort_kilosort25 {
 // capsule - Spikesort Kilosort4 Ecephys
 process spikesort_kilosort4 {
 	tag 'spikesort-kilosort4'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-spikesort-kilosort4:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-spikesort-kilosort4_si-0.101.2.sif'
 	containerOptions '--nv'
 	clusterOptions '--gres=gpu:1'
 	module 'cuda'
@@ -333,7 +333,7 @@ process spikesort_kilosort4 {
 // capsule - Spikesort SpykingCircus Ecephys
 process spikesort_spykingcircus2 {
 	tag 'spikesort-spykingcircus2'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-spikesort-spykingcircus2:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-spikesort-spykingcircus2_si-0.101.2.sif'
 
 	cpus 16
 	memory '64 GB'
@@ -383,7 +383,7 @@ process spikesort_spykingcircus2 {
 // capsule - Postprocess Ecephys
 process postprocessing {
 	tag 'postprocessing'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-base:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
 
 	cpus 16
 	memory '64 GB'
@@ -433,7 +433,7 @@ process postprocessing {
 // capsule - Curate Ecephys
 process curation {
 	tag 'curation'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-base:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
 
 	cpus 4
 	memory '32 GB'
@@ -479,7 +479,7 @@ process curation {
 // capsule - Unit Classifier Ecephys
 process unit_classifier {
 	tag 'unit-classifier'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-unit-classifier:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-unit-classifier_si-0.101.2.sif'
 
 	cpus 4
 	memory '32 GB'
@@ -525,10 +525,10 @@ process unit_classifier {
 // capsule - Visualize Ecephys
 process visualization {
 	tag 'visualization'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-base:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
 
 	cpus 4
-	memory '32 GB'
+	memory '64 GB'
 	// Allocate 2h per recording hour
 	time { max_duration_min.value.toFloat()*2 + 'm' }
 
@@ -577,7 +577,7 @@ process visualization {
 // capsule - Collect Results Ecephys
 process results_collector {
 	tag 'result-collector'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-base:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
 
 	cpus 4
 	memory '32 GB'
@@ -632,7 +632,7 @@ process results_collector {
 // capsule - aind-subject-nwb
 process nwb_subject {
 	tag 'nwb-subject'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-nwb:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-nwb_si-0.101.2.sif'
 
 	cpus 4
 	memory '32 GB'
@@ -676,7 +676,7 @@ process nwb_subject {
 // capsule - aind-ecephys-nwb
 process nwb_ecephys {
 	tag 'nwb-ecephys'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-nwb:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-nwb_si-0.101.2.sif'
 
 	cpus 16
 	memory '64 GB'
@@ -723,7 +723,7 @@ process nwb_ecephys {
 // capsule - aind-units-nwb
 process nwb_units {
 	tag 'nwb-units'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-nwb:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-nwb_si-0.101.2.sif'
 
 	cpus 4
 	memory '32 GB'

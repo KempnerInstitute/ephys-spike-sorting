@@ -7,17 +7,8 @@ println "DATA_PATH: ${DATA_PATH}"
 println "RESULTS_PATH: ${RESULTS_PATH}"
 println "PARAMS: ${params}"
 
-params_keys = params.keySet()
-// set global n_jobs
-if ("n_jobs" in params_keys) {
-	n_jobs = params.n_jobs
-}
-else
-{
-	n_jobs = -1
-}
-println "N JOBS: ${n_jobs}"
 
+params_keys = params.keySet()
 // set sorter
 if ("sorter" in params_keys) {
 	sorter = params.sorter
@@ -39,58 +30,37 @@ else
 println "Using RUNMODE: ${runmode}"
 
 if (!params_keys.contains('job_dispatch_args')) {
-	job_dispatch_args = ""
-}
-else {
-	job_dispatch_args = params.job_dispatch_args
+	params.job_dispatch_args = ""
 }
 if (!params_keys.contains('preprocessing_args')) {
-	preprocessing_args = ""
-}
-else {
-	preprocessing_args = params.preprocessing_args
+	params.preprocessing_args = ""
 }
 if (!params_keys.contains('spikesorting_args')) {
-	spikesorting_args = ""
-}
-else {
-	spikesorting_args = params.spikesorting_args
+	params.spikesorting_args = ""
 }
 if (!params_keys.contains('postprocessing_args')) {
-	postprocessing_args = ""
-}
-else {
-	postprocessing_args = params.postprocessing_args
+	params.postprocessing_args = ""
 }
 if (!params_keys.contains('unit_classifier_args')) {
-	unit_classifier_args = ""
-}
-else {
-	unit_classifier_args = params.unit_classifier_args
+	params.unit_classifier_args = ""
 }
 if (!params_keys.contains('nwb_subject_args')) {
-	nwb_subject_args = ""
-}
-else {
-	nwb_subject_args = params.nwb_subject_args
+	params.nwb_subject_args = ""
 }
 if (!params_keys.contains('nwb_ecephys_args')) {
-	nwb_ecephys_args = ""
-}
-else {
-	nwb_ecephys_args = params.nwb_ecephys_args
+	params.nwb_ecephys_args = ""
 }
 
 if (runmode == 'fast'){
-	preprocessing_args = "--motion skip"
-	postprocessing_args = "--skip-extensions spike_locations,principal_components"
-	unit_classifier_args = "--skip-metrics-recomputation"
-	nwb_ecephys_args = "--skip-lfp"
+	params.preprocessing_args = "--motion skip"
+	params.postprocessing_args = "--skip-extensions spike_locations,principal_components"
+	params.unit_classifier_args = "--skip-metrics-recomputation"
+	params.nwb_ecephys_args = "--skip-lfp"
 	println "Running in fast mode. Setting parameters:"
-	println "preprocessing_args: ${preprocessing_args}"
-	println "postprocessing_args: ${postprocessing_args}"
-	println "unit_classifier_args: ${unit_classifier_args}"
-	println "nwb_ecephys_args: ${nwb_ecephys_args}"
+	println "preprocessing_args: ${params.preprocessing_args}"
+	println "postprocessing_args: ${params.postprocessing_args}"
+	println "unit_classifier_args: ${params.unit_classifier_args}"
+	println "nwb_ecephys_args: ${params.nwb_ecephys_args}"
 }
 
 
@@ -156,7 +126,11 @@ else if (sorter == 'spykingcircus2') {
 // capsule - Job Dispatch Ecephys
 process job_dispatch {
 	tag 'job-dispatch'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-base:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
+
+	cpus 4
+	memory '32 GB'
+	time '1h'
 
 	input:
 	path 'capsule/data/ecephys_session' from ecephys_to_job_dispatch.collect()
@@ -169,32 +143,32 @@ process job_dispatch {
 	path 'capsule/results/*' into job_dispatch_to_nwb_ecephys
 	path 'capsule/results/*' into job_dispatch_to_nwb_units
 	env max_duration_min
-	
+
 	script:
 	"""
 	#!/usr/bin/env bash
 	set -e
+
+	TASK_DIR=\$(pwd)
 
 	mkdir -p capsule
 	mkdir -p capsule/data
 	mkdir -p capsule/results
 	mkdir -p capsule/scratch
 
-	TASK_DIR=\$(pwd)
-
 	echo "[${task.tag}] cloning git repo..."
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-job-dispatch.git" capsule-repo
-	git -C capsule-repo checkout d6bdb9cc02d6711790a5c406cd50c1434074b5e2 --quiet
+	git -C capsule-repo -c core.fileMode=false checkout d6bdb9cc02d6711790a5c406cd50c1434074b5e2 --quiet
 	mv capsule-repo/code capsule/code
 	rm -rf capsule-repo
 
 	echo "[${task.tag}] running capsule..."
 	cd capsule/code
 	chmod +x run
-	./run ${job_dispatch_args}
+	./run ${params.job_dispatch_args}
 
 	max_duration_min=\$(python get_max_recording_duration_min.py)
-	echo "MAX DURATION: \$max_duration_min"
+	echo "Max recording duration in minutes: \$max_duration_min"
 
 	cd \$TASK_DIR
 
@@ -205,10 +179,15 @@ process job_dispatch {
 // capsule - Preprocess Ecephys
 process preprocessing {
 	tag 'preprocessing'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-base:si-0.101.2'
-	maxForks 1
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
+
+	cpus 16
+	memory '64 GB'
+	// Allocate 4x recording duration
+	time { max_duration_min.value.toFloat()*4 + 'm' }
 
 	input:
+	env max_duration_min
 	path 'capsule/data/' from job_dispatch_to_preprocessing.flatten()
 	path 'capsule/data/ecephys_session' from ecephys_to_preprocessing.collect()
 
@@ -232,14 +211,16 @@ process preprocessing {
 
 	echo "[${task.tag}] cloning git repo..."
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-preprocessing.git" capsule-repo
-	git -C capsule-repo checkout 8b993d495e6230b6b2aabfd4acff364679e864b8 --quiet
+	git -C capsule-repo -c core.fileMode=false checkout 8b993d495e6230b6b2aabfd4acff364679e864b8 --quiet
 	mv capsule-repo/code capsule/code
 	rm -rf capsule-repo
+
+	echo "[${task.tag}] allocated time: ${task.time}"
 
 	echo "[${task.tag}] running capsule..."
 	cd capsule/code
 	chmod +x run
-	./run ${preprocessing_args} --n-jobs ${n_jobs}
+	./run ${params.preprocessing_args}
 
 	echo "[${task.tag}] completed!"
 	"""
@@ -248,11 +229,18 @@ process preprocessing {
 // capsule - Spikesort Kilosort2.5 Ecephys
 process spikesort_kilosort25 {
 	tag 'spikesort-kilosort25'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-spikesort-kilosort25:si-0.101.2'
-	containerOptions '--gpus all'
-	maxForks 1
+	container 'file:///${CONTAINER_DIR}/aind-ephys-spikesort-kilosort25_si-0.101.2.sif'
+	containerOptions '--nv'
+	clusterOptions '--gres=gpu:1'
+	module 'cuda'
+
+	cpus 16
+	memory '64 GB'
+	// Allocate 4x recording duration
+	time { max_duration_min.value.toFloat()*4 + 'm' }
 
 	input:
+	env max_duration_min
 	path 'capsule/data/' from preprocessing_to_spikesort_kilosort25
 
 	output:
@@ -275,14 +263,16 @@ process spikesort_kilosort25 {
 
 	echo "[${task.tag}] cloning git repo..."
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-spikesort-kilosort25.git" capsule-repo
-	git -C capsule-repo checkout 8c8987260a27c75b1f523d306b40a16962a97ea6 --quiet
+	git -C capsule-repo -c core.fileMode=false checkout 8c8987260a27c75b1f523d306b40a16962a97ea6 --quiet
 	mv capsule-repo/code capsule/code
 	rm -rf capsule-repo
+
+	echo "[${task.tag}] allocated time: ${task.time}"
 
 	echo "[${task.tag}] running capsule..."
 	cd capsule/code
 	chmod +x run
-	./run ${spikesorting_args} --n-jobs ${n_jobs}
+	./run ${params.spikesorting_args}
 
 	echo "[${task.tag}] completed!"
 	"""
@@ -291,11 +281,18 @@ process spikesort_kilosort25 {
 // capsule - Spikesort Kilosort4 Ecephys
 process spikesort_kilosort4 {
 	tag 'spikesort-kilosort4'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-spikesort-kilosort4:si-0.101.2'
-	containerOptions '--gpus all'
-	maxForks 1
+	container 'file:///${CONTAINER_DIR}/aind-ephys-spikesort-kilosort4_si-0.101.2.sif'
+	containerOptions '--nv'
+	clusterOptions '--gres=gpu:1'
+	module 'cuda'
+
+	cpus 16
+	memory '64 GB'
+	// Allocate 4x recording duration
+	time { max_duration_min.value.toFloat()*4 + 'm' }
 
 	input:
+	env max_duration_min
 	path 'capsule/data/' from preprocessing_to_spikesort_kilosort4
 
 	output:
@@ -318,14 +315,16 @@ process spikesort_kilosort4 {
 
 	echo "[${task.tag}] cloning git repo..."
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-spikesort-kilosort4.git" capsule-repo
-	git -C capsule-repo checkout 6b4e6cd5bf90e05be7ce7e2de9a28f4dcfa02c29 --quiet
+	git -C capsule-repo -c core.fileMode=false checkout 6b4e6cd5bf90e05be7ce7e2de9a28f4dcfa02c29 --quiet
 	mv capsule-repo/code capsule/code
 	rm -rf capsule-repo
+
+	echo "[${task.tag}] allocated time: ${task.time}"
 
 	echo "[${task.tag}] running capsule..."
 	cd capsule/code
 	chmod +x run
-	./run ${spikesorting_args} --n-jobs ${n_jobs}
+	./run ${params.spikesorting_args}
 
 	echo "[${task.tag}] completed!"
 	"""
@@ -334,11 +333,15 @@ process spikesort_kilosort4 {
 // capsule - Spikesort SpykingCircus Ecephys
 process spikesort_spykingcircus2 {
 	tag 'spikesort-spykingcircus2'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-spikesort-spykingcircus2:si-0.101.2'
-	containerOptions '--shm-size 1g'
-	maxForks 1
+	container 'file:///${CONTAINER_DIR}/aind-ephys-spikesort-spykingcircus2_si-0.101.2.sif'
+
+	cpus 16
+	memory '64 GB'
+	// Allocate 4x recording duration
+	time { max_duration_min.value.toFloat()*4 + 'm' }
 
 	input:
+	env max_duration_min
 	path 'capsule/data/' from preprocessing_to_spikesort_spykingcircus2
 
 	output:
@@ -361,14 +364,16 @@ process spikesort_spykingcircus2 {
 
 	echo "[${task.tag}] cloning git repo..."
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-spikesort-spykingcircus2.git" capsule-repo
-	git -C capsule-repo checkout 1f88d6741e33bf9a0e6e23107c64f3c7ad17b5e4 --quiet
+	git -C capsule-repo -c core.fileMode=false checkout 1f88d6741e33bf9a0e6e23107c64f3c7ad17b5e4 --quiet
 	mv capsule-repo/code capsule/code
 	rm -rf capsule-repo
+
+	echo "[${task.tag}] allocated time: ${task.time}"
 
 	echo "[${task.tag}] running capsule..."
 	cd capsule/code
 	chmod +x run
-	./run ${spikesorting_args} --n-jobs ${n_jobs}
+	./run ${params.spikesorting_args}
 
 	echo "[${task.tag}] completed!"
 	"""
@@ -378,11 +383,15 @@ process spikesort_spykingcircus2 {
 // capsule - Postprocess Ecephys
 process postprocessing {
 	tag 'postprocessing'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-base:si-0.101.2'
-	containerOptions '--shm-size 1g'
-	maxForks 1
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
+
+	cpus 16
+	memory '64 GB'
+	// Allocate 4x recording duration
+	time { max_duration_min.value.toFloat()*4 + 'm' }
 
 	input:
+	env max_duration_min
 	path 'capsule/data/ecephys_session' from ecephys_to_postprocessing.collect()
 	path 'capsule/data/' from spikesort_to_postprocessing.collect()
 	path 'capsule/data/' from preprocessing_to_postprocessing.collect()
@@ -406,14 +415,16 @@ process postprocessing {
 
 	echo "[${task.tag}] cloning git repo..."
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-postprocessing.git" capsule-repo
-	git -C capsule-repo checkout 1bcc57e0b6be45dc39afd3ef18e0ad678173cc2e --quiet
+	git -C capsule-repo -c core.fileMode=false checkout 1bcc57e0b6be45dc39afd3ef18e0ad678173cc2e --quiet
 	mv capsule-repo/code capsule/code
 	rm -rf capsule-repo
+
+	echo "[${task.tag}] allocated time: ${task.time}"
 
 	echo "[${task.tag}] running capsule..."
 	cd capsule/code
 	chmod +x run
-	./run ${postprocessing_args} --n-jobs ${n_jobs}
+	./run ${params.postprocessing_args}
 
 	echo "[${task.tag}] completed!"
 	"""
@@ -422,9 +433,15 @@ process postprocessing {
 // capsule - Curate Ecephys
 process curation {
 	tag 'curation'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-base:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
+
+	cpus 4
+	memory '32 GB'
+	// Allocate 10min per recording hour. Minimum 10m
+	time { max_duration_min.value.toFloat()/6 > 10 ? max_duration_min.value.toFloat()/6 + 'm' : '10m' }
 
 	input:
+	env max_duration_min
 	path 'capsule/data/' from postprocessing_to_curation
 
 	output:
@@ -443,9 +460,12 @@ process curation {
 
 	echo "[${task.tag}] cloning git repo..."
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-curation.git" capsule-repo
-	git -C capsule-repo checkout a8d31a85ceeedb903f19c5b8476cdaf8a8b750e6 --quiet
+	git -C capsule-repo -c core.fileMode=false checkout a8d31a85ceeedb903f19c5b8476cdaf8a8b750e6 --quiet
 	mv capsule-repo/code capsule/code
 	rm -rf capsule-repo
+
+	echo "[${task.tag}] allocated time: ${task.time}"
+
 
 	echo "[${task.tag}] running capsule..."
 	cd capsule/code
@@ -459,9 +479,15 @@ process curation {
 // capsule - Unit Classifier Ecephys
 process unit_classifier {
 	tag 'unit-classifier'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-unit-classifier:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-unit-classifier_si-0.101.2.sif'
+
+	cpus 4
+	memory '32 GB'
+	// Allocate 30min per recording hour. Minimum 10m
+	time { max_duration_min.value.toFloat()*0.5 > 10 ? max_duration_min.value.toFloat()*0.5 + 'm' : '10m' }
 
 	input:
+	env max_duration_min
 	path 'capsule/data/' from postprocessing_to_unit_classifier
 
 	output:
@@ -480,14 +506,17 @@ process unit_classifier {
 
 	echo "[${task.tag}] cloning git repo..."
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-unit-classifier.git" capsule-repo
-	git -C capsule-repo checkout a5f1e947c7099090cca2c8250b9bad0b796a67dd --quiet
+	git -C capsule-repo -c core.fileMode=false checkout a5f1e947c7099090cca2c8250b9bad0b796a67dd --quiet
 	mv capsule-repo/code capsule/code
 	rm -rf capsule-repo
+
+	echo "[${task.tag}] allocated time: ${task.time}"
+
 
 	echo "[${task.tag}] running capsule..."
 	cd capsule/code
 	chmod +x run
-	./run ${unit_classifier_args}
+	./run ${params.unit_classifier_args}
 
 	echo "[${task.tag}] completed!"
 	"""
@@ -496,9 +525,15 @@ process unit_classifier {
 // capsule - Visualize Ecephys
 process visualization {
 	tag 'visualization'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-base:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
+
+	cpus 4
+	memory '64 GB'
+	// Allocate 2h per recording hour
+	time { max_duration_min.value.toFloat()*2 + 'm' }
 
 	input:
+	env max_duration_min
 	path 'capsule/data/' from job_dispatch_to_visualization.collect()
 	path 'capsule/data/' from unit_classifier_to_visualization.collect()
 	path 'capsule/data/' from preprocessing_to_visualization
@@ -523,9 +558,12 @@ process visualization {
 
 	echo "[${task.tag}] cloning git repo..."
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-visualization.git" capsule-repo
-	git -C capsule-repo checkout f58ab7cda7757b4703da049a160a5677c2cd9c54 --quiet
+	git -C capsule-repo -c core.fileMode=false checkout f58ab7cda7757b4703da049a160a5677c2cd9c54 --quiet
 	mv capsule-repo/code capsule/code
 	rm -rf capsule-repo
+
+	echo "[${task.tag}] allocated time: ${task.time}"
+
 
 	echo "[${task.tag}] running capsule..."
 	cd capsule/code
@@ -539,11 +577,17 @@ process visualization {
 // capsule - Collect Results Ecephys
 process results_collector {
 	tag 'result-collector'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-base:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
+
+	cpus 4
+	memory '32 GB'
+	// Allocate 1x recording duration
+	time { max_duration_min.value.toFloat() > 10 ? max_duration_min.value.toFloat() + 'm' : '10m' }
 
 	publishDir "$RESULTS_PATH", saveAs: { filename -> new File(filename).getName() }
 
 	input:
+	env max_duration_min
 	path 'capsule/data/' from job_dispatch_to_results_collector.collect()
 	path 'capsule/data/' from preprocessing_to_results_collector.collect()
 	path 'capsule/data/' from spikesort_to_results_collector.collect()
@@ -570,9 +614,11 @@ process results_collector {
 	echo "[${task.tag}] cloning git repo..."
 
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-results-collector.git" capsule-repo
-	git -C capsule-repo checkout 73cb90e9c321a6c06012681ca08d93b71e99d952 --quiet
+	git -C capsule-repo -c core.fileMode=false checkout 73cb90e9c321a6c06012681ca08d93b71e99d952 --quiet
 	mv capsule-repo/code capsule/code
 	rm -rf capsule-repo
+
+	echo "[${task.tag}] allocated time: ${task.time}"
 
 	echo "[${task.tag}] running capsule..."
 	cd capsule/code
@@ -586,9 +632,15 @@ process results_collector {
 // capsule - aind-subject-nwb
 process nwb_subject {
 	tag 'nwb-subject'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-nwb:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-nwb_si-0.101.2.sif'
+
+	cpus 4
+	memory '32 GB'
+	// Allocate 10min per recording hour. Minimum 10m
+	time { max_duration_min.value.toFloat()/6 > 10 ? max_duration_min.value.toFloat()/6 + 'm' : '10m' }
 
 	input:
+	env max_duration_min
 	path 'capsule/data/ecephys_session' from ecephys_to_nwb_subject.collect()
 
 	output:
@@ -605,15 +657,17 @@ process nwb_subject {
 	mkdir -p capsule/scratch
 
 	echo "[${task.tag}] cloning git repo..."
-	git clone "https://github.com/AllenNeuralDynamics/aind-subject-nwb" capsule-repo
-    git -C capsule-repo checkout 6a3615779353c733622c7e65cd8aea12622b4b35 --quiet
+	git clone "https://github.com/AllenNeuralDynamics/aind-subject-nwb.git" capsule-repo
+    git -C capsule-repo -c core.fileMode=false checkout 6a3615779353c733622c7e65cd8aea12622b4b35 --quiet
 	mv capsule-repo/code capsule/code
 	rm -rf capsule-repo
+
+	echo "[${task.tag}] allocated time: ${task.time}"
 
 	echo "[${task.tag}] running capsule..."
 	cd capsule/code
 	chmod +x run
-	./run ${nwb_subject_args}
+	./run ${params.nwb_subject_args}
 
 	echo "[${task.tag}] completed!"
 	"""
@@ -622,9 +676,15 @@ process nwb_subject {
 // capsule - aind-ecephys-nwb
 process nwb_ecephys {
 	tag 'nwb-ecephys'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-nwb:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-nwb_si-0.101.2.sif'
+
+	cpus 16
+	memory '64 GB'
+	// Allocate 2x recording duration
+	time { max_duration_min.value.toFloat()*2 + 'm' }
 
 	input:
+	env max_duration_min
 	path 'capsule/data/' from job_dispatch_to_nwb_ecephys.collect()
 	path 'capsule/data/ecephys_session' from ecephys_to_nwb_ecephys.collect()
 	path 'capsule/data/' from nwb_subject_to_nwb_ecephys.collect()
@@ -644,14 +704,16 @@ process nwb_ecephys {
 
 	echo "[${task.tag}] cloning git repo..."
 	git clone "https://github.com/AllenNeuralDynamics/aind-ecephys-nwb.git" capsule-repo
-	git -C capsule-repo checkout 5bbb7a8dc57058f2040ea0b3957dd345ca302795 --quiet
+	git -C capsule-repo -c core.fileMode=false checkout 5bbb7a8dc57058f2040ea0b3957dd345ca302795 --quiet
 	mv capsule-repo/code capsule/code
 	rm -rf capsule-repo
+
+	echo "[${task.tag}] allocated time: ${task.time}"
 
 	echo "[${task.tag}] running capsule..."
 	cd capsule/code
 	chmod +x run
-	./run ${nwb_ecephys_args}
+	./run ${params.nwb_ecephys_args}
 
 	echo "[${task.tag}] completed!"
 	"""
@@ -661,11 +723,17 @@ process nwb_ecephys {
 // capsule - aind-units-nwb
 process nwb_units {
 	tag 'nwb-units'
-	container 'ghcr.io/allenneuraldynamics/aind-ephys-pipeline-nwb:si-0.101.2'
+	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-nwb_si-0.101.2.sif'
+
+	cpus 4
+	memory '32 GB'
+	// Allocate 2x recording duration
+	time { max_duration_min.value.toFloat()*2 + 'm' }
 
 	publishDir "$RESULTS_PATH/nwb", saveAs: { filename -> new File(filename).getName() }
 
 	input:
+	env max_duration_min
 	path 'capsule/data/' from job_dispatch_to_nwb_units.collect()
 	path 'capsule/data/' from results_collector_to_nwb_units.collect()
 	path 'capsule/data/ecephys_session' from ecephys_to_nwb_units.collect()
@@ -686,9 +754,11 @@ process nwb_units {
 
 	echo "[${task.tag}] cloning git repo..."
 	git clone "https://github.com/AllenNeuralDynamics/aind-units-nwb.git" capsule-repo
-	git -C capsule-repo checkout b532ec8dc7d1dc8751bb4de80941772465aaecd9 --quiet
+	git -C capsule-repo -c core.fileMode=false checkout b532ec8dc7d1dc8751bb4de80941772465aaecd9 --quiet
 	mv capsule-repo/code capsule/code
 	rm -rf capsule-repo
+
+	echo "[${task.tag}] allocated time: ${task.time}"
 
 	echo "[${task.tag}] running capsule..."
 	cd capsule/code

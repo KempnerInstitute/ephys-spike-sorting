@@ -1,7 +1,7 @@
 
-# Neuropixel Ephys Spike Sorting Pipeline on Kempner AI Cluster
+# Neuropixel Ephys Spike Sorting Pipeline on Harvard Medical School O2 Cluster
 
-This document outlines the workflow for performing spike sorting on electrophysiological recorded data using Kilosort2.5 method on Kempner AI cluster. Please refer [HMS Cluster](HMS-cluster/README.md) if you plan to use Harvard Medical School's O2 Cluster.  This pipeline is a derivative of the one available at [Allen Neural Dynamics GitHub]( https://github.com/AllenNeuralDynamics/aind-ephys-pipeline-kilosort25).
+This document outlines the workflow for performing spike sorting on electrophysiological recorded data using Kilosort2.5 method on O2. This pipeline is a derivative of the one available at [Allen Neural Dynamics GitHub]( https://github.com/AllenNeuralDynamics/aind-ephys-pipeline-kilosort25).
 
 The analysis consists of several steps, as illustrated in the flowchart:
 - Preprocessing
@@ -17,8 +17,8 @@ All these steps are executed through the Nextflow workflow tool. While the pipel
 
 ## Slurm Job Submission
 
-These are are major steps to run the nextflow pipeline on the Kempner AI 
-Cluster. Please refer [HMS Cluster](HMS-cluster/README.md) if you plan to use Harvard Medical School's O2 Cluster. 
+These are are major steps to run the nextflow pipeline on the HMS O2 
+Cluster.
 
 1. Log in to the AI cluster
 2. Prepare input data
@@ -30,11 +30,11 @@ Cluster. Please refer [HMS Cluster](HMS-cluster/README.md) if you plan to use Ha
 
 ### 1. Connect to the AI Cluster
 
-Connect to the AI Cluster using the SSH
+Connect to the O2 Cluster using the SSH
 ```
-ssh <your username>@login.rc.fas.harvard.edu
+ssh <your username>@o2.hms.harvard.edu
 ```
-Please find more information about ways to connect to the cluster in the [handbook](https://kempnerinstitute.github.io/kempner-hpc-handbook/intro.html). 
+Please find more information about ways to connect to the cluster in the [O2 Documentation](https://harvardmed.atlassian.net/wiki/spaces/O2/pages). 
 
 ### 2. Preparing Input Data
 
@@ -62,7 +62,7 @@ git clone https://github.com/KempnerInstitute/kilosort25-spike-sorting
 The relevant job and config files are located in the directory `pipeline`. 
 
 ```
-cd kilosort25-spike-sorting/pipeline
+cd kilosort25-spike-sorting/pipeline_hms_o2
 ```
 
 Before submitting the job, the Slurm job file `spike_sort.slrm` and the nextflow configuration file `nextflow_slurm.config` need to be edited to specify the relevant directory paths and cluster resources. 
@@ -79,34 +79,34 @@ The following environment variables need modification within the `spike_sort.slr
 
 For testing, you can try the example data with 
 ```
-DATA_PATH="/n/holylfs06/LABS/kempner_shared/Everyone/workflow/kilosort25-spike-sorting/data/sample_data_1/dir1/20240108_M175_4W50_g0_imec0/"
+DATA_PATH="/n/data1/hms/neurobio/sabatini/bala/EPhys/Ephys_sample_data/dir1/20240108_M175_4W50_g0_imec0"
 ```
 
 #### 4.b Modifying Slurm Job Options
 
-Within the job script, ensure you provide the appropriate partition and account names for your allocation on the Kempner AI cluster. 
+Within the job script, ensure you provide the appropriate partition and time-limit for your job. 
 
 ```
 #SBATCH --partition=<partition_name>
-#SBATCH --account=<account_name>
+#SBATCH --time=<time-limit>
+
 ```
 
 In addition, change the clusterOptions in **nextflow_slurm.config** 
 
 ```
-clusterOptions = ' -p <partition_name> -A <account_name> --constraint=intel'
+clusterOptions = ' -p <partition_name> --constraint=intel'
 ```
 The nextflow will start all the processes (slurm jobs) in the above parition and account. Without any field in the clusterOptions, the job will utilize the default partition and account. Each process uses the resources set in the file `main_slurm.nf`. The constraint `intel` will restrict the job to run on the intel cpus. 
 
 #### 4.c Environment Setup (optional)
 
-For users running on the cannon cluster, we have cached the containers required for the workflow in a shared directory. For external users, you can use the `environment/pull_singularity_containers.sh` script to pull local copies of 
-the required containers to a location of your choice. The alternative path can then be passed to the nextflow execution script through setting the environment variable `EPHYS_CONTAINER_DIR` to point to that directory.
+For users running on the HMS O2 cluster, we have cached the containers required for the workflow in a shared directory located at 
 
 The following lines in the Slurm script define the software environment required to run the job: 
 ```
-module load Mambaforge/23.11.0-fasrc01
-mamba activate /n/holylfs06/LABS/kempner_shared/Everyone/ephys/software/nextflow_conda
+module load miniconda3/23.1.0
+source activate /n/data1/hms/neurobio/sabatini/bala/EPhys/software/nextflow_conda
 ```
 It is okay to use the nextflow package in the above path. Alternatively, the nextflow package can be installed in the local directory. 
 
@@ -121,7 +121,7 @@ sbatch spike_sort.slrm
 To track the progress of your submitted job, use the squeue command with your username:
 
 ```
-squeue -u <username> -M all
+squeue -u <username>
 ```
 
 The standard output and pipeline progress will be stored in the Slurm output file `kilosort-<nodename>.<job-name>.<jobid>.out`. Here is a sample Slurm output file showing the progress of the pipeline. 
@@ -142,7 +142,7 @@ tail kilosort-<nodename>.<job-name>.<jobid>.out
 
 ```
 
-For the above sample data, the pipeline executed on the Kempner AI Cluster will be completed in 30 minutes. 
+For the above sample data, the pipeline executed on the O2 Cluster will be completed in 60-120 minutes. 
 
 ### 6. Results and Visualization
 
@@ -177,7 +177,7 @@ postprocess/spike_interface.ipynb
 The script multijob_submission_wrapper.sh is designed to submit multiple pipelines simultaneously, offering a convenient alternative to manually preparing a Slurm file for each data directory. In the Slurm file spike_sort.slrm, define the environment variable DATA_PATH as the top-level directory. This directory can contain several subdirectories with data files. Below is an example path you can use for testing:
 
 ```
-DATA_PATH="/n/holylfs06/LABS/kempner_shared/Everyone/workflow/kilosort25-spike-sorting/data/sample_data_1"
+DATA_PATH="/n/data1/hms/neurobio/sabatini/bala/EPhys/Ephys_sample_data"
 
 ```
 Lets add executable permission to the wrapper script.
