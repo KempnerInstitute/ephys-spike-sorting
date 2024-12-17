@@ -53,7 +53,7 @@ To process multiple datasets concurrently, check the later section on [processin
 Clone the repository on the cluster. 
 
 ```
-git clone https://github.com/KempnerInstitute/kilosort25-spike-sorting
+git clone https://github.com/KempnerInstitute/ephys-spike-sorting
 
 ```
 
@@ -62,7 +62,7 @@ git clone https://github.com/KempnerInstitute/kilosort25-spike-sorting
 The relevant job and config files are located in the directory `pipeline`. 
 
 ```
-cd kilosort25-spike-sorting/pipeline
+cd ephys-spike-sorting/pipeline
 ```
 
 Before submitting the job, the Slurm job file `spike_sort.slrm` and the nextflow configuration file `nextflow_slurm.config` need to be edited to specify the relevant directory paths and cluster resources. 
@@ -79,7 +79,7 @@ The following environment variables need modification within the `spike_sort.slr
 
 For testing, you can try the example data with 
 ```
-DATA_PATH="/n/holylfs06/LABS/kempner_shared/Everyone/workflow/kilosort25-spike-sorting/data/sample_data_1/dir1/20240108_M175_4W50_g0_imec0/"
+DATA_PATH="/n/holylfs06/LABS/kempner_shared/Everyone/workflow/ephys-spike-sorting-2024/data/sample_data_1/dir1/20240108_M175_4W50_g0_imec0/"
 ```
 
 #### 4.b Modifying Slurm Job Options
@@ -97,6 +97,13 @@ In addition, change the clusterOptions in **nextflow_slurm.config**
 clusterOptions = ' -p <partition_name> -A <account_name> --constraint=intel'
 ```
 The nextflow will start all the processes (slurm jobs) in the above parition and account. Without any field in the clusterOptions, the job will utilize the default partition and account. Each process uses the resources set in the file `main_slurm.nf`. The constraint `intel` will restrict the job to run on the intel cpus. 
+
+Please change the clusterOptions, which occurs in two functions, in **main_slurm.nf**. 
+
+```
+clusterOptions = ' -p <partition_name> -A <account_name> --constraint=intel --gres=gpu:1'
+```
+
 
 #### 4.c Environment Setup (optional)
 
@@ -128,18 +135,19 @@ The standard output and pipeline progress will be stored in the Slurm output fil
 
 ```
 tail kilosort-<nodename>.<job-name>.<jobid>.out
-
-[6a/3030e8] process > job_dispatch (capsule-5832718) [100%] 1 of 1 ✔
-[e2/ca6550] process > preprocessing (capsule-4923... [100%] 4 of 4 ✔
-[86/d213f6] process > spikesort_kilosort25 (capsu... [ 50%] 2 of 4
+[97/6ef142] process > job_dispatch (job-dispatch)    [100%] 1 of 1 ✔
+[28/767b98] process > preprocessing (preprocessing)  [100%] 1 of 1 ✔
+[-        ] process > spikesort_kilosort25           -
+[03/d79c83] process > spikesort_kilosort4 (spikes... [ 50%] 1 of 2, failed: 1...
+[-        ] process > spikesort_spykingcircus2       -
 [-        ] process > postprocessing                 -
 [-        ] process > curation                       -
 [-        ] process > unit_classifier                -
 [-        ] process > visualization                  -
 [-        ] process > results_collector              -
-[60/e53b65] process > nwb_subject (capsule-9109637)  [100%] 1 of 1 ✔
+[c9/11246a] process > nwb_subject (nwb-subject)      [100%] 1 of 1 ✔
+[5c/00d2a3] process > nwb_ecephys (nwb-ecephys)      [100%] 1 of 1 ✔
 [-        ] process > nwb_units                      -
-
 ```
 
 For the above sample data, the pipeline executed on the Kempner AI Cluster will be completed in 30 minutes. 
@@ -177,7 +185,7 @@ postprocess/spike_interface.ipynb
 The script multijob_submission_wrapper.sh is designed to submit multiple pipelines simultaneously, offering a convenient alternative to manually preparing a Slurm file for each data directory. In the Slurm file spike_sort.slrm, define the environment variable DATA_PATH as the top-level directory. This directory can contain several subdirectories with data files. Below is an example path you can use for testing:
 
 ```
-DATA_PATH="/n/holylfs06/LABS/kempner_shared/Everyone/workflow/kilosort25-spike-sorting/data/sample_data_1"
+DATA_PATH="/n/holylfs06/LABS/kempner_shared/Everyone/workflow/ephys-spike-sorting-2024/data/sample_data_1"
 
 ```
 Lets add executable permission to the wrapper script.
@@ -205,8 +213,6 @@ preprocessing_args:
  --motion {skip,compute,apply} 
  --motion-preset
 ```
-
-
 
 ### Further details on the pipeline and the links to repositories
 
