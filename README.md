@@ -1,7 +1,7 @@
 
 # Neuropixel Ephys Spike Sorting Pipeline on Kempner AI Cluster
 
-This document outlines the workflow for performing spike sorting on electrophysiological recorded data using Kilosort2.5 method on Kempner AI cluster. Please refer [HMS Cluster](HMS-cluster/README.md) if you plan to use Harvard Medical School's O2 Cluster.  This pipeline is a derivative of the one available at [Allen Neural Dynamics GitHub]( https://github.com/AllenNeuralDynamics/aind-ephys-pipeline-kilosort25).
+This document outlines the workflow for performing spike sorting on electrophysiological recorded data using Kilosort2.5 method on Kempner AI cluster. Please refer [HMS Cluster](HMS-cluster/README.md) if you plan to use Harvard Medical School's O2 Cluster.  This pipeline is a derivative of the one available at [Allen Neural Dynamics GitHub]( https://github.com/AllenNeuralDynamics/aind-ephys-pipeline).
 
 The analysis consists of several steps, as illustrated in the flowchart:
 - Preprocessing
@@ -46,14 +46,16 @@ data_dir
     └── 20240805_M100_4W50_g0_t0.imec0.ap.meta
 ```
 
-To process multiple datasets concurrently, check the later section on [processing multiple data directories through a wrapper script](https://github.com/KempnerInstitute/kilosort25-spike-sorting/edit/dmbala-multi-job/README.md#8-processing-multiple-data-directories-through-a-wrapper-script).
+To process multiple datasets concurrently, check the later section on [processing multiple data directories through a wrapper script](https://github.com/KempnerInstitute/ephys-spike-sorting/#8-processing-multiple-data-directories-through-a-wrapper-script).
+
 
 ### 3. Copy the Workfow and Job Files
 
 Clone the repository on the cluster. 
 
 ```
-git clone https://github.com/KempnerInstitute/kilosort25-spike-sorting
+
+git clone https://github.com/KempnerInstitute/ephys-spike-sorting
 
 ```
 
@@ -62,7 +64,7 @@ git clone https://github.com/KempnerInstitute/kilosort25-spike-sorting
 The relevant job and config files are located in the directory `pipeline`. 
 
 ```
-cd kilosort25-spike-sorting/pipeline
+cd ephys-spike-sorting/pipeline
 ```
 
 Before submitting the job, the Slurm job file `spike_sort.slrm` and the nextflow configuration file `nextflow_slurm.config` need to be edited to specify the relevant directory paths and cluster resources. 
@@ -79,7 +81,7 @@ The following environment variables need modification within the `spike_sort.slr
 
 For testing, you can try the example data with 
 ```
-DATA_PATH="/n/holylfs06/LABS/kempner_shared/Everyone/workflow/kilosort25-spike-sorting/data/sample_data_1/dir1/20240108_M175_4W50_g0_imec0/"
+DATA_PATH="/n/holylfs06/LABS/kempner_shared/Everyone/workflow/ephys-spike-sorting-2024/data/sample_data_1/dir1/20240108_M175_4W50_g0_imec0/"
 ```
 
 #### 4.b Modifying Slurm Job Options
@@ -177,8 +179,7 @@ postprocess/spike_interface.ipynb
 The script multijob_submission_wrapper.sh is designed to submit multiple pipelines simultaneously, offering a convenient alternative to manually preparing a Slurm file for each data directory. In the Slurm file spike_sort.slrm, define the environment variable DATA_PATH as the top-level directory. This directory can contain several subdirectories with data files. Below is an example path you can use for testing:
 
 ```
-DATA_PATH="/n/holylfs06/LABS/kempner_shared/Everyone/workflow/kilosort25-spike-sorting/data/sample_data_1"
-
+DATA_PATH="/n/holylfs06/LABS/kempner_shared/Everyone/workflow/ephys-spike-sorting-2024/data/sample_data_1/dir1/20240108_M175_4W50_g0_imec0/"
 ```
 Lets add executable permission to the wrapper script.
 ```
