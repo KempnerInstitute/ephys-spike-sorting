@@ -3,8 +3,8 @@
 #SBATCH -c 4
 #SBATCH --partition=short
 #SBATCH --time=8:00:00
-#SBATCH --output=kilosort-%N.%x.%j.out
-#SBATCH --error=kilosort-%N.%x.%j.err
+#SBATCH --output=ephys-%N.%x.%j.out
+#SBATCH --error=ephys-%N.%x.%j.err
 
 DATA_PATH="/n/data1/hms/neurobio/sabatini/bala/EPhys/Ephys_sample_data/dir1/20240108_M175_4W50_g0_imec0"
 WORK_DIR="/n/data1/hms/neurobio/sabatini/bala/EPhys/scratch/"
