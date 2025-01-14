@@ -1,7 +1,7 @@
 
 # Neuropixel Ephys Spike Sorting Pipeline on Kempner AI Cluster
 
-This document outlines the workflow for performing spike sorting on electrophysiological recorded data using Kilosort2.5 method on Kempner AI cluster. Please refer [HMS Cluster](HMS-cluster/README.md) if you plan to use Harvard Medical School's O2 Cluster.  This pipeline is a derivative of the one available at [Allen Neural Dynamics GitHub]( https://github.com/AllenNeuralDynamics/aind-ephys-pipeline-kilosort25).
+This document outlines the workflow for performing spike sorting on electrophysiological recorded data using Kilosort4.0, Kilosort2.5, or spykingcircus2  method on Kempner AI cluster. Please refer [HMS Cluster](HMS-cluster/README.md) if you plan to use Harvard Medical School's O2 Cluster.  This pipeline is a derivative of the one available at [Allen Neural Dynamics GitHub](https://github.com/AllenNeuralDynamics/aind-ephys-pipeline).
 
 The analysis consists of several steps, as illustrated in the flowchart:
 - Preprocessing
@@ -12,7 +12,7 @@ The analysis consists of several steps, as illustrated in the flowchart:
 All these steps are executed through the Nextflow workflow tool. While the pipeline can handle various data formats like `aind`, `nwb`, and `SpikeGLX`, this guide will focus specifically on `SpikeGLX` data.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/KempnerInstitute/kilosort25-spike-sorting/main/figures/svg/flowchart_ephys_kilosort2.5_spikesorting.svg " width="60%" />
+  <img src="https://raw.githubusercontent.com/KempnerInstitute/ephys-spike-sorting/main/figures/svg/flowchart-ephys-kilosort4.0-spikesorting.svg" width="60%" />
 </p>
 
 ## Slurm Job Submission
@@ -46,7 +46,7 @@ data_dir
     └── 20240805_M100_4W50_g0_t0.imec0.ap.meta
 ```
 
-To process multiple datasets concurrently, check the later section on [processing multiple data directories through a wrapper script](https://github.com/KempnerInstitute/kilosort25-spike-sorting/edit/dmbala-multi-job/README.md#8-processing-multiple-data-directories-through-a-wrapper-script).
+To process multiple datasets concurrently, check the later section on [processing multiple data directories through a wrapper script](https://github.com/KempnerInstitute/ephys-spike-sorting/edit/dmbala-multi-job/README.md#8-processing-multiple-data-directories-through-a-wrapper-script).
 
 ### 3. Copy the Workfow and Job Files
 
@@ -131,10 +131,10 @@ To track the progress of your submitted job, use the squeue command with your us
 squeue -u <username> -M all
 ```
 
-The standard output and pipeline progress will be stored in the Slurm output file `kilosort-<nodename>.<job-name>.<jobid>.out`. Here is a sample Slurm output file showing the progress of the pipeline. 
+The standard output and pipeline progress will be stored in the Slurm output file `ephys-<nodename>.<job-name>.<jobid>.out`. Here is a sample Slurm output file showing the progress of the pipeline. 
 
 ```
-tail kilosort-<nodename>.<job-name>.<jobid>.out
+tail ephys-<nodename>.<job-name>.<jobid>.out
 [97/6ef142] process > job_dispatch (job-dispatch)    [100%] 1 of 1 ✔
 [28/767b98] process > preprocessing (preprocessing)  [100%] 1 of 1 ✔
 [-        ] process > spikesort_kilosort25           -
