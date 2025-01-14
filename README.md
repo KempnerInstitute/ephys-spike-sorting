@@ -9,7 +9,7 @@ The analysis consists of several steps, as illustrated in the flowchart:
 - Post-processing
 - Visualization
 
-All these steps are executed through the Nextflow workflow tool. While the pipeline can handle various data formats like `aind`, `nwb`, and `SpikeGLX`, this guide will focus specifically on `SpikeGLX` data.
+All these steps are executed through the Nextflow workflow tool. While the pipeline can handle various data formats like `aind`, `nwb`, `openephys`, and `SpikeGLX`, this guide will focus specifically on `SpikeGLX` data.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/KempnerInstitute/kilosort25-spike-sorting/main/figures/svg/flowchart_ephys_kilosort2.5_spikesorting.svg " width="60%" />
