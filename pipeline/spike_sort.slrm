@@ -4,8 +4,8 @@
 #SBATCH --partition=<your-partition>
 #SBATCH --account=<your-Slurm-account> 
 #SBATCH --time=8:00:00
-#SBATCH --output=kilosort-%N.%x.%j.out
-#SBATCH --error=kilosort-%N.%x.%j.err
+#SBATCH --output=ephys-%N.%x.%j.out
+#SBATCH --error=ephys-%N.%x.%j.err
 
 DATA_PATH="location_of_your_data_dir"
 WORK_DIR="location_of_your_scratch_directory"
