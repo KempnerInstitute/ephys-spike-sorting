@@ -1,7 +1,7 @@
 
-# Neuropixel Ephys Spike Sorting Pipeline on Harvard Medical School O2 Cluster
+# Neuropixel Ephys Spike Sorting Pipeline on the Kempner AI Cluster
 
-This document outlines the workflow for performing spike sorting on electrophysiological recorded data using Kilosort2.5 method on O2. This pipeline is a derivative of the one available at [Allen Neural Dynamics GitHub]( https://github.com/AllenNeuralDynamics/aind-ephys-pipeline-kilosort25).
+This document outlines the workflow for performing spike sorting on electrophysiological recorded data using Kilosort4.0, Kilosort2.5, or spykingcircus2  method on the Kempner AI cluster. Please refer [HMS Cluster](HMS-cluster/README.md) if you plan to use Harvard Medical School's O2 Cluster.  This pipeline is a derivative of the one available at [Allen Neural Dynamics GitHub](https://github.com/AllenNeuralDynamics/aind-ephys-pipeline).
 
 The analysis consists of several steps, as illustrated in the flowchart:
 - Preprocessing
@@ -9,16 +9,16 @@ The analysis consists of several steps, as illustrated in the flowchart:
 - Post-processing
 - Visualization
 
-All these steps are executed through the Nextflow workflow tool. While the pipeline can handle various data formats like `aind`, `nwb`, and `SpikeGLX`, this guide will focus specifically on `SpikeGLX` data.
+All these steps are executed through the Nextflow workflow tool. While the pipeline can handle various data formats like `aind`, `nwb`, `openephys`, and `SpikeGLX`, this guide will focus specifically on `SpikeGLX` data.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/KempnerInstitute/kilosort25-spike-sorting/main/figures/svg/flowchart_ephys_kilosort2.5_spikesorting.svg " width="60%" />
+  <img src="https://github.com/KempnerInstitute/ephys-spike-sorting/blob/update-fig/figures/svg/flowchart-ephys-kilosort4.0-spikesorting.svg" width="60%" />
 </p>
 
 ## Slurm Job Submission
 
-These are are major steps to run the nextflow pipeline on the HMS O2 
-Cluster.
+These are are major steps to run the nextflow pipeline on the Kempner AI 
+Cluster. Please refer [HMS Cluster](HMS-cluster/README.md) if you plan to use Harvard Medical School's O2 Cluster. 
 
 1. Log in to the AI cluster
 2. Prepare input data
@@ -30,11 +30,11 @@ Cluster.
 
 ### 1. Connect to the AI Cluster
 
-Connect to the O2 Cluster using the SSH
+Connect to the AI Cluster using the SSH
 ```
-ssh <your username>@o2.hms.harvard.edu
+ssh <your username>@login.rc.fas.harvard.edu
 ```
-Please find more information about ways to connect to the cluster in the [O2 Documentation](https://harvardmed.atlassian.net/wiki/spaces/O2/pages). 
+Please find more information about ways to connect to the cluster in the [handbook](https://kempnerinstitute.github.io/kempner-hpc-handbook/intro.html). 
 
 ### 2. Preparing Input Data
 
@@ -46,23 +46,23 @@ data_dir
     └── 20240805_M100_4W50_g0_t0.imec0.ap.meta
 ```
 
-To process multiple datasets concurrently, check the later section on [processing multiple data directories through a wrapper script](https://github.com/KempnerInstitute/kilosort25-spike-sorting/edit/dmbala-multi-job/README.md#8-processing-multiple-data-directories-through-a-wrapper-script).
+To process multiple datasets concurrently, check the later section on [processing multiple data directories through a wrapper script](https://github.com/KempnerInstitute/ephys-spike-sorting/edit/dmbala-multi-job/README.md#8-processing-multiple-data-directories-through-a-wrapper-script).
 
 ### 3. Copy the Workfow and Job Files
 
 Clone the repository on the cluster. 
 
 ```
-git clone https://github.com/KempnerInstitute/kilosort25-spike-sorting
+git clone https://github.com/KempnerInstitute/ephys-spike-sorting
 
 ```
 
 ### 4. Edit the Job and Config Files
 
-The relevant job and config files are located in the directory `pipeline`. 
+The relevant job and config files are located in the directory `ephys-spike-sorting/pipeline/kempner_cluster`. 
 
 ```
-cd kilosort25-spike-sorting/pipeline_hms_o2
+cd ephys-spike-sorting/pipeline/kempner_cluster
 ```
 
 Before submitting the job, the Slurm job file `spike_sort.slrm` and the nextflow configuration file `nextflow_slurm.config` need to be edited to specify the relevant directory paths and cluster resources. 
@@ -74,39 +74,46 @@ The following environment variables need modification within the `spike_sort.slr
 - **DATA_PATH**: Specifies the location of your input data.
 - **WORK_DIR**: A temporary work directory used by the pipeline during execution. e.g. "./scr_tmp_dir"
 - **RESULTS_PATH**: Defines where the pipeline will store the generated output files. e.g. "./output"
-- **PIPELINE_PATH**: Location of nextflow pipeline and nextflow config files. Usually "./repo_path/pipeline" or "./"
+- **PIPELINE_PATH**: Location of nextflow pipeline and nextflow config files. Usually "./repo_path/pipeline/kempner_cluster" or "./"
 
 
 For testing, you can try the example data with 
 ```
-DATA_PATH="/n/data1/hms/neurobio/sabatini/bala/EPhys/Ephys_sample_data/dir1/20240108_M175_4W50_g0_imec0"
+DATA_PATH="/n/holylfs06/LABS/kempner_shared/Everyone/workflow/ephys-spike-sorting-2024/data/sample_data_1/dir1/20240108_M175_4W50_g0_imec0/"
 ```
 
 #### 4.b Modifying Slurm Job Options
 
-Within the job script, ensure you provide the appropriate partition and time-limit for your job. 
+Within the job script, ensure you provide the appropriate partition and account names for your allocation on the Kempner AI cluster. 
 
 ```
 #SBATCH --partition=<partition_name>
-#SBATCH --time=<time-limit>
-
+#SBATCH --account=<account_name>
 ```
 
 In addition, change the clusterOptions in **nextflow_slurm.config** 
 
 ```
-clusterOptions = ' -p <partition_name> --constraint=intel'
+clusterOptions = ' -p <partition_name> -A <account_name> --constraint=intel'
 ```
 The nextflow will start all the processes (slurm jobs) in the above parition and account. Without any field in the clusterOptions, the job will utilize the default partition and account. Each process uses the resources set in the file `main_slurm.nf`. The constraint `intel` will restrict the job to run on the intel cpus. 
 
+Please change the clusterOptions, which occurs twice, in the file **main_slurm.nf**. 
+
+```
+clusterOptions = ' -p <partition_name> -A <account_name> --constraint=intel --gres=gpu:1'
+```
+
+
 #### 4.c Environment Setup (optional)
 
-For users running on the HMS O2 cluster, we have cached the containers required for the workflow in a shared directory located at 
+For users running on the cannon cluster, we have cached the containers required for the workflow in a shared directory. For external users, you can use the `environment/pull_singularity_containers.sh` script to pull local copies of 
+the required containers to a location of your choice. The alternative path can then be passed to the nextflow execution script through setting the environment variable `EPHYS_CONTAINER_DIR` to point to that directory.
 
 The following lines in the Slurm script define the software environment required to run the job: 
 ```
-module load miniconda3/23.1.0
-source activate /n/data1/hms/neurobio/sabatini/bala/EPhys/software/nextflow_conda
+module load Mambaforge/23.11.0-fasrc01
+mamba activate /n/holylfs06/LABS/kempner_shared/Everyone/ephys/software/nextflow_conda
 ```
 It is okay to use the nextflow package in the above path. Alternatively, the nextflow package can be installed in the local directory. 
 
@@ -121,28 +128,29 @@ sbatch spike_sort.slrm
 To track the progress of your submitted job, use the squeue command with your username:
 
 ```
-squeue -u <username>
+squeue -u <username> -M all
 ```
 
-The standard output and pipeline progress will be stored in the Slurm output file `kilosort-<nodename>.<job-name>.<jobid>.out`. Here is a sample Slurm output file showing the progress of the pipeline. 
+The standard output and pipeline progress will be stored in the Slurm output file `ephys-<nodename>.<job-name>.<jobid>.out`. Here is a sample Slurm output file showing the progress of the pipeline. 
 
 ```
-tail kilosort-<nodename>.<job-name>.<jobid>.out
-
-[6a/3030e8] process > job_dispatch (capsule-5832718) [100%] 1 of 1 ✔
-[e2/ca6550] process > preprocessing (capsule-4923... [100%] 4 of 4 ✔
-[86/d213f6] process > spikesort_kilosort25 (capsu... [ 50%] 2 of 4
+tail ephys-<nodename>.<job-name>.<jobid>.out
+[97/6ef142] process > job_dispatch (job-dispatch)    [100%] 1 of 1 ✔
+[28/767b98] process > preprocessing (preprocessing)  [100%] 1 of 1 ✔
+[-        ] process > spikesort_kilosort25           -
+[03/d79c83] process > spikesort_kilosort4 (spikes... [ 50%] 1 of 2, failed: 1...
+[-        ] process > spikesort_spykingcircus2       -
 [-        ] process > postprocessing                 -
 [-        ] process > curation                       -
 [-        ] process > unit_classifier                -
 [-        ] process > visualization                  -
 [-        ] process > results_collector              -
-[60/e53b65] process > nwb_subject (capsule-9109637)  [100%] 1 of 1 ✔
+[c9/11246a] process > nwb_subject (nwb-subject)      [100%] 1 of 1 ✔
+[5c/00d2a3] process > nwb_ecephys (nwb-ecephys)      [100%] 1 of 1 ✔
 [-        ] process > nwb_units                      -
-
 ```
 
-For the above sample data, the pipeline executed on the O2 Cluster will be completed in 60-120 minutes. 
+For the above sample data, the pipeline executed on the Kempner AI Cluster will be completed in 30 minutes. 
 
 ### 6. Results and Visualization
 
@@ -177,7 +185,7 @@ postprocess/spike_interface.ipynb
 The script multijob_submission_wrapper.sh is designed to submit multiple pipelines simultaneously, offering a convenient alternative to manually preparing a Slurm file for each data directory. In the Slurm file spike_sort.slrm, define the environment variable DATA_PATH as the top-level directory. This directory can contain several subdirectories with data files. Below is an example path you can use for testing:
 
 ```
-DATA_PATH="/n/data1/hms/neurobio/sabatini/bala/EPhys/Ephys_sample_data"
+DATA_PATH="/n/holylfs06/LABS/kempner_shared/Everyone/workflow/ephys-spike-sorting-2024/data/sample_data_1"
 
 ```
 Lets add executable permission to the wrapper script.
@@ -205,8 +213,6 @@ preprocessing_args:
  --motion {skip,compute,apply} 
  --motion-preset
 ```
-
-
 
 ### Further details on the pipeline and the links to repositories
 
