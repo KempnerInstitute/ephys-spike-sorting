@@ -15,7 +15,7 @@ All these steps are executed through the Nextflow workflow tool. While the pipel
 <p align="center">
 
 <p align="center">
-  <img src="https://github.com/KempnerInstitute/ephys-spike-sorting/blob/update-fig/figures/svg/flowchart-ephys-kilosort4.0-spikesorting.svg" width="20%" />
+  <img src="https://github.com/KempnerInstitute/ephys-spike-sorting/blob/update-fig/figures/svg/flowchart-ephys-kilosort4.0-spikesorting.svg" width="40%" />
 </p>
 
 ## Slurm Job Submission
