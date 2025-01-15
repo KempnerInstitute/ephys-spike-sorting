@@ -3,9 +3,9 @@
 
 This document outlines the workflow for performing spike sorting on electrophysiological recorded data using Kilosort4.0, Kilosort2.5, or spykingcircus2  method on Kempner AI cluster. Please refer [HMS Cluster](HMS-cluster/README.md) if you plan to use Harvard Medical School's O2 Cluster.  This pipeline is a derivative of the one available at [Allen Neural Dynamics GitHub](https://github.com/AllenNeuralDynamics/aind-ephys-pipeline).
 
-Please refer [HMS Cluster](HMS-cluster/README.md) if you plan to use Harvard Medical School's O2 Cluster.  
+To run the analysis on Kempner AI Cluster, please refer to [HMS Cluster](HMS-cluster/README.md). 
 
-Please refer [HMS Cluster](HMS-cluster/README.md) if you plan to use Harvard Medical School's O2 Cluster.  
+To run the analysis on Harvard Medical School's O2 Cluster, please refer to [HMS Cluster](HMS-cluster/README.md).  
 
 The analysis consists of several steps, as illustrated in the flowchart:
 - Preprocessing
