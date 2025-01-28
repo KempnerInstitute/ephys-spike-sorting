@@ -13,10 +13,9 @@ The analysis consists of several steps, as illustrated in the flowchart:
 All these steps are executed through the Nextflow workflow tool. While the pipeline can handle various data formats like `aind`, `nwb`, `openephys`, and `SpikeGLX`, this guide will focus specifically on `SpikeGLX` data.
 
 <p align="center">
-
-<p align="center">
-  <img src="https://github.com/KempnerInstitute/ephys-spike-sorting/blob/update-fig/figures/svg/flowchart-ephys-kilosort4.0-spikesorting.svg" width="40%" />
+  <img src="https://raw.githubusercontent.com/KempnerInstitute/ephys-spike-sorting/main/figures/svg/flowchart-ephys-kilosort4.0-spikesorting.svg" width="40%" />
 </p>
+
 
 ## Slurm Job Submission
 

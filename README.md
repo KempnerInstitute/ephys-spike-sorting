@@ -8,6 +8,6 @@ To run the analysis on FASRC, please refer to [Kempner AI Cluster README](pipeli
 To run the analysis on HMS IT RC, please refer to [HMS O2 Cluster README](pipeline/hms_cluster/README.md).  
 
 <p align="center">
-  <img src="https://github.com/KempnerInstitute/ephys-spike-sorting/blob/update-fig/figures/svg/flowchart-ephys-kilosort4.0-spikesorting.svg" width="60%" />
+  <img src="https://raw.githubusercontent.com/KempnerInstitute/ephys-spike-sorting/main/figures/svg/flowchart-ephys-kilosort4.0-spikesorting.svg" width="50%" />
 </p>
 
