@@ -232,7 +232,6 @@ process spikesort_kilosort25 {
 	container 'file:///${CONTAINER_DIR}/aind-ephys-spikesort-kilosort25_si-0.101.2.sif'
 	containerOptions '--nv'
         clusterOptions '-p gpu --gres=gpu:1'
-	module 'cuda'
 
 	cpus 16
 	memory '64 GB'
@@ -284,7 +283,6 @@ process spikesort_kilosort4 {
 	container 'file:///${CONTAINER_DIR}/aind-ephys-spikesort-kilosort4_si-0.101.2.sif'
 	containerOptions '--nv'
         clusterOptions '-p gpu --gres=gpu:1'
-	module 'cuda'
 
 	cpus 16
 	memory '64 GB'
