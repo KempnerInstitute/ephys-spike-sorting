@@ -231,7 +231,7 @@ process spikesort_kilosort25 {
 	tag 'spikesort-kilosort25'
 	container 'file:///${CONTAINER_DIR}/aind-ephys-spikesort-kilosort25_si-0.101.2.sif'
 	containerOptions '--nv'
-	clusterOptions '--gres=gpu:1'
+	clusterOptions '-p <partition_name> -A <account_name> --gres=gpu:1'
 	module 'cuda'
 
 	cpus 16
@@ -283,7 +283,7 @@ process spikesort_kilosort4 {
 	tag 'spikesort-kilosort4'
 	container 'file:///${CONTAINER_DIR}/aind-ephys-spikesort-kilosort4_si-0.101.2.sif'
 	containerOptions '--nv'
-	clusterOptions '--gres=gpu:1'
+        clusterOptions '-p <partition_name> -A <account_name> --gres=gpu:1'
 	module 'cuda'
 
 	cpus 16

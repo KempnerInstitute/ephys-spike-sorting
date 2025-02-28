@@ -93,20 +93,20 @@ Within the job script, ensure you provide the appropriate partition and account 
 In addition, change the clusterOptions in **nextflow_slurm.config** 
 
 ```
-clusterOptions = ' -p <partition_name> -A <account_name> --constraint=intel'
+clusterOptions = ' -p <partition_name> -A <account_name>'
 ```
 The nextflow will start all the processes (slurm jobs) in the above parition and account. Without any field in the clusterOptions, the job will utilize the default partition and account. Each process uses the resources set in the file `main_slurm.nf`. The constraint `intel` will restrict the job to run on the intel cpus. 
 
 Please change the clusterOptions, which occurs twice, in the file **main_slurm.nf**. 
 
 ```
-clusterOptions = ' -p <partition_name> -A <account_name> --constraint=intel --gres=gpu:1'
+clusterOptions = ' -p <partition_name> -A <account_name> --gres=gpu:1'
 ```
 
 
 #### 4.c Environment Setup (optional)
 
-For users running on the cannon cluster, we have cached the containers required for the workflow in a shared directory. For external users, you can use the `environment/pull_singularity_containers.sh` script to pull local copies of 
+For users running on the FASRC cluster, we have cached the containers required for the workflow in a shared directory. For external users, you can use the `environment/pull_singularity_containers.sh` script to pull local copies of 
 the required containers to a location of your choice. The alternative path can then be passed to the nextflow execution script through setting the environment variable `EPHYS_CONTAINER_DIR` to point to that directory.
 
 The following lines in the Slurm script define the software environment required to run the job: 
