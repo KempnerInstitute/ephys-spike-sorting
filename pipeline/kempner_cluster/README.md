@@ -106,7 +106,7 @@ clusterOptions = ' -p <partition_name> -A <account_name> --constraint=intel --gr
 
 #### 4.c Environment Setup (optional)
 
-For users running on the cannon cluster, we have cached the containers required for the workflow in a shared directory. For external users, you can use the `environment/pull_singularity_containers.sh` script to pull local copies of 
+For users running on the FASRC cluster, we have cached the containers required for the workflow in a shared directory. For external users, you can use the `environment/pull_singularity_containers.sh` script to pull local copies of 
 the required containers to a location of your choice. The alternative path can then be passed to the nextflow execution script through setting the environment variable `EPHYS_CONTAINER_DIR` to point to that directory.
 
 The following lines in the Slurm script define the software environment required to run the job: 
