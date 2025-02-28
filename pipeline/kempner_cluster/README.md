@@ -93,14 +93,14 @@ Within the job script, ensure you provide the appropriate partition and account 
 In addition, change the clusterOptions in **nextflow_slurm.config** 
 
 ```
-clusterOptions = ' -p <partition_name> -A <account_name> --constraint=intel'
+clusterOptions = ' -p <partition_name> -A <account_name>'
 ```
 The nextflow will start all the processes (slurm jobs) in the above parition and account. Without any field in the clusterOptions, the job will utilize the default partition and account. Each process uses the resources set in the file `main_slurm.nf`. The constraint `intel` will restrict the job to run on the intel cpus. 
 
 Please change the clusterOptions, which occurs twice, in the file **main_slurm.nf**. 
 
 ```
-clusterOptions = ' -p <partition_name> -A <account_name> --constraint=intel --gres=gpu:1'
+clusterOptions = 'clusterOptions = ' -p <partition_name> -A <account_name> --gres=gpu:1'
 ```
 
 
