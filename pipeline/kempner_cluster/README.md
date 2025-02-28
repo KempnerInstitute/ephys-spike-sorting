@@ -100,7 +100,7 @@ The nextflow will start all the processes (slurm jobs) in the above parition and
 Please change the clusterOptions, which occurs twice, in the file **main_slurm.nf**. 
 
 ```
-clusterOptions = 'clusterOptions = ' -p <partition_name> -A <account_name> --gres=gpu:1'
+clusterOptions = ' -p <partition_name> -A <account_name> --gres=gpu:1'
 ```
 
 
