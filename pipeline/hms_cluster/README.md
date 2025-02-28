@@ -40,13 +40,14 @@ Please find more information about ways to connect to the cluster in the [O2 Doc
 
 ### 2. Preparing Input Data
 
-Begin by transferring your experimental data to the cluster. Ensure each experiment's data resides in its own dedicated directory. The expected data structure is:
+Begin by transferring your experimental data to the cluster. Ensure each experiment's data, including the recording  and the corresponding meta data, resides in its own dedicated directory. The expected data structure is:
 
 ```
 data_dir
     ├── 20240805_M100_4W50_g0_t0.imec0.ap.bin
     └── 20240805_M100_4W50_g0_t0.imec0.ap.meta
 ```
+Here the file with the extention `.bin` is the recording  data and the extention `.meta` is the meta data. 
 
 To process multiple datasets concurrently, check the later section on [processing multiple data directories through a wrapper script](https://github.com/KempnerInstitute/ephys-spike-sorting/edit/dmbala-multi-job/README.md#8-processing-multiple-data-directories-through-a-wrapper-script).
 
