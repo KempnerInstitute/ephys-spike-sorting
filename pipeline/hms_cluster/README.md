@@ -130,6 +130,7 @@ The standard output and pipeline progress will be stored in the Slurm output fil
 
 ```
 tail ephys-<nodename>.<job-name>.<jobid>.out
+
 [97/6ef142] process > job_dispatch (job-dispatch)    [100%] 1 of 1 ✔
 [28/767b98] process > preprocessing (preprocessing)  [100%] 1 of 1 ✔
 [-        ] process > spikesort_kilosort25           -
