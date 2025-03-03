@@ -134,7 +134,7 @@ tail ephys-<nodename>.<job-name>.<jobid>.out
 [97/6ef142] process > job_dispatch (job-dispatch)    [100%] 1 of 1 ✔
 [28/767b98] process > preprocessing (preprocessing)  [100%] 1 of 1 ✔
 [-        ] process > spikesort_kilosort25           -
-[03/d79c83] process > spikesort_kilosort4 (spikes... [ 50%] 1 of 2, 
+[03/d79c83] process > spikesort_kilosort4 (spikes... [ 50%] 1 of 1
 [-        ] process > spikesort_spykingcircus2       -
 [-        ] process > postprocessing                 -
 [-        ] process > curation                       -
@@ -144,8 +144,8 @@ tail ephys-<nodename>.<job-name>.<jobid>.out
 [c9/11246a] process > nwb_subject (nwb-subject)      [100%] 1 of 1 ✔
 [5c/00d2a3] process > nwb_ecephys (nwb-ecephys)      [100%] 1 of 1 ✔
 [-        ] process > nwb_units                      -
-
 ```
+
 For the above sample data, the pipeline executed on the O2 Cluster will be completed in 60-120 minutes. 
 
 ### 6. Results and Visualization
@@ -160,10 +160,9 @@ data_description.json  preprocessed/   spikesorted/
 
 The `visualization_output.json` file provides visualizations of timeseries, drift maps, and the sorting output using Figurl. You can refer to the provided sample visualization for reference.
 
+[sorting_summary](https://figurl.org/f?v=npm://@fi-sci/figurl-sortingview@12/dist&d=sha1://9f1fca96ff81e92a5c0a97e7686b621b925d4efc&label=ecephys_session%20-%20block0_imec0.ap_recording1%20-%20kilosort4%20-%20Sorting%20Summary): spike sorting results for visualization and curation
 
-[sorting_summary](https://figurl.org/f?v=npm://@fi-sci/figurl-sortingview@12/dist&d=sha1://3b0465d83dab9c14210477b5bc690c94c2f0c797&s={%22sortingCuration%22:%22gh://AllenNeuralDynamics/ephys-sorting-manual-curation/main/ecephys_session/block0_imec0.ap_recording1_group1/kilosort2_5/curation.json%22}&label=ecephys_session%20-%20block0_imec0.ap_recording1_group1%20-%20kilosort2_5%20-%20Sorting%20Summary): spike sorting results for visualization and curation
-
-[timeseries](https://figurl.org/f?v=npm://@fi-sci/figurl-sortingview@12/dist&d=sha1://f038c09c3465a22bda53e6917e1cfa7ad0afd6f7&label=ecephys_session%20-%20block0_imec0.ap_recording1_group0): Time series results of sorted spikes. 
+[timeseries](https://figurl.org/f?v=npm://@fi-sci/figurl-sortingview@12/dist&d=sha1://5f97d47869b7380ff3c4b44df75f738c820e4071&label=ecephys_session%20-%20block0_imec0.ap_recording1): Time series results of sorted spikes. 
 
 #### 6a. Clean Up
 
