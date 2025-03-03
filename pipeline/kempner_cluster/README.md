@@ -138,7 +138,7 @@ tail ephys-<nodename>.<job-name>.<jobid>.out
 [97/6ef142] process > job_dispatch (job-dispatch)    [100%] 1 of 1 ✔
 [28/767b98] process > preprocessing (preprocessing)  [100%] 1 of 1 ✔
 [-        ] process > spikesort_kilosort25           -
-[03/d79c83] process > spikesort_kilosort4 (spikes... [ 50%] 1 of 2, failed: 1...
+[03/d79c83] process > spikesort_kilosort4 (spikes... [ 50%] 1 of 1
 [-        ] process > spikesort_spykingcircus2       -
 [-        ] process > postprocessing                 -
 [-        ] process > curation                       -

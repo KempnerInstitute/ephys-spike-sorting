@@ -130,14 +130,10 @@ The standard output and pipeline progress will be stored in the Slurm output fil
 
 ```
 tail ephys-<nodename>.<job-name>.<jobid>.out
-
-```
-tail ephys-<nodename>.<job-name>.<jobid>.out
-
 [97/6ef142] process > job_dispatch (job-dispatch)    [100%] 1 of 1 ✔
 [28/767b98] process > preprocessing (preprocessing)  [100%] 1 of 1 ✔
 [-        ] process > spikesort_kilosort25           -
-[03/d79c83] process > spikesort_kilosort4 (spikes... [ 50%] 1 of 2, failed: 1...
+[03/d79c83] process > spikesort_kilosort4 (spikes... [ 50%] 1 of 1
 [-        ] process > spikesort_spykingcircus2       -
 [-        ] process > postprocessing                 -
 [-        ] process > curation                       -
@@ -147,8 +143,8 @@ tail ephys-<nodename>.<job-name>.<jobid>.out
 [c9/11246a] process > nwb_subject (nwb-subject)      [100%] 1 of 1 ✔
 [5c/00d2a3] process > nwb_ecephys (nwb-ecephys)      [100%] 1 of 1 ✔
 [-        ] process > nwb_units                      -
-
 ```
+
 For the above sample data, the pipeline executed on the O2 Cluster will be completed in 60-120 minutes. 
 
 ### 6. Results and Visualization
