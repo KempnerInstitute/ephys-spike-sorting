@@ -108,7 +108,7 @@ For users running on the HMS O2 cluster, we have cached the containers required 
 The following lines in the Slurm script define the software environment required to run the job: 
 ```
 module load miniconda3/23.1.0
-source activate /n/data1/hms/neurobio/sabatini/bala/EPhys/software/nextflow_conda
+source activate /n/scratch/users/b/bad395/public-data/nextflow_conda 
 ```
 It is okay to use the nextflow package in the above path. Alternatively, the nextflow package can be installed in the local directory. 
 
