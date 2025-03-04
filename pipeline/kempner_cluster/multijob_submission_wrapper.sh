@@ -14,7 +14,7 @@ pipeline_path=$(grep "^PIPELINE_PATH" $Slurm_file | sed "s/PIPELINE_PATH=//g" | 
 echo $pipeline_path
 # Walk through the parent directory and extract the leaf directories
 echo $top_dir
-dir_data_array=( $(find $top_dir -depth -type d -print0 |
+dir_data_array=( $(find $top_dir/* -depth -type d -print0 |
 awk -v RS='\0' '
     substr(previous, 1, length($0) + 1) != $0 "/"
     { previous = $0 }
