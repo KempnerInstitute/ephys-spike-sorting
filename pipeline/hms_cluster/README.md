@@ -81,7 +81,7 @@ The following environment variables need modification within the `spike_sort.slr
 
 For testing, you can try the example data with 
 ```
-DATA_PATH="/n/data1/hms/neurobio/sabatini/bala/EPhys/Ephys_sample_data/dir1/20240108_M175_4W50_g0_imec0"
+DATA_PATH="/n/scratch/users/b/bad395/public-data/20240108_M175_4W50_g0_imec0"   
 ```
 
 #### 4.b Modifying Slurm Job Options
@@ -108,7 +108,7 @@ For users running on the HMS O2 cluster, we have cached the containers required 
 The following lines in the Slurm script define the software environment required to run the job: 
 ```
 module load miniconda3/23.1.0
-source activate /n/data1/hms/neurobio/sabatini/bala/EPhys/software/nextflow_conda
+source activate /n/scratch/users/b/bad395/public-data/nextflow_conda 
 ```
 It is okay to use the nextflow package in the above path. Alternatively, the nextflow package can be installed in the local directory. 
 
@@ -180,7 +180,7 @@ postprocess/spike_interface.ipynb
 The script multijob_submission_wrapper.sh is designed to submit multiple pipelines simultaneously, offering a convenient alternative to manually preparing a Slurm file for each data directory. In the Slurm file spike_sort.slrm, define the environment variable DATA_PATH as the top-level directory. This directory can contain several subdirectories with data files. Below is an example path you can use for testing:
 
 ```
-DATA_PATH="/n/data1/hms/neurobio/sabatini/bala/EPhys/Ephys_sample_data"
+DATA_PATH="/n/scratch/users/b/bad395/public-data/Ephys_sample_data"
 
 ```
 Lets add executable permission to the wrapper script.
