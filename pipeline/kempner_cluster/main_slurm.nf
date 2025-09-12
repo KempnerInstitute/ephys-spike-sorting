@@ -283,7 +283,7 @@ process spikesort_kilosort4 {
 	tag 'spikesort-kilosort4'
 	container 'file:///${CONTAINER_DIR}/aind-ephys-spikesort-kilosort4_si-0.101.2.sif'
 	containerOptions '--nv'
-        clusterOptions '-p <partition_name> -A <account_name> --gres=gpu:1'
+        clusterOptions '-p <partition_name> -A <account_name>  --gres=gpu:1'
 	module 'cuda'
 
 	cpus 16
@@ -415,7 +415,7 @@ process postprocessing {
 
 	echo "[${task.tag}] cloning git repo..."
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-postprocessing.git" capsule-repo
-	git -C capsule-repo -c core.fileMode=false checkout 1bcc57e0b6be45dc39afd3ef18e0ad678173cc2e --quiet
+	git -C capsule-repo -c core.fileMode=false checkout eeaa6801ed9cf05d893a6beb96a20b617c9b59f7 --quiet
 	mv capsule-repo/code capsule/code
 	rm -rf capsule-repo
 
