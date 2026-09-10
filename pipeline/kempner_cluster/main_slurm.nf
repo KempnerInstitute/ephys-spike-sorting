@@ -7,6 +7,28 @@ println "DATA_PATH: ${DATA_PATH}"
 println "RESULTS_PATH: ${RESULTS_PATH}"
 println "PARAMS: ${params}"
 
+// Slurm account and partitions, resolved from the environment (populated by
+// set_partition.sh) so the same pipeline runs on any allocation. Override by
+// exporting GPU_PARTITION / CPU_PARTITION / ACCOUNT.
+gpu_partition = System.getenv('GPU_PARTITION') ?: 'kempner_interactive'
+cpu_partition = System.getenv('CPU_PARTITION') ?: 'kempner_interactive'
+account = System.getenv('ACCOUNT') ?: ''
+account_opt = account ? "-A ${account} " : ""
+gpu_cluster_options = "-p ${gpu_partition} ${account_opt}--gres=gpu:1"
+
+// kempner_interactive is a GPU partition: every job must request a GPU and use
+// fewer than 8 cores per GPU. When steps land there, cap cores/memory so the
+// same pipeline also runs via the kempner_interactive fallback. (The CPU steps
+// get their --gres from the global clusterOptions in nextflow_slurm.config.)
+ki_cpu = (cpu_partition == 'kempner_interactive')
+ki_gpu = (gpu_partition == 'kempner_interactive')
+cpu_cores = ki_cpu ? 4 : 16
+gpu_cores = ki_gpu ? 4 : 16
+cpu_mem   = ki_cpu ? '32 GB' : '64 GB'
+gpu_mem   = ki_gpu ? '32 GB' : '64 GB'
+println "GPU cluster options: ${gpu_cluster_options}"
+println "Cores/mem: cpu=${cpu_cores}/${cpu_mem} gpu=${gpu_cores}/${gpu_mem} (kempner_interactive cpu=${ki_cpu} gpu=${ki_gpu})"
+
 
 params_keys = params.keySet()
 // set sorter
@@ -29,33 +51,41 @@ else
 }
 println "Using RUNMODE: ${runmode}"
 
+// Per-capsule argument defaults.
+//
+// Each params.*_args must be assigned AT MOST ONCE: Nextflow keeps the first
+// assignment and ignores (with a warning) every later one. The fast-mode values
+// therefore have to be folded into the initial assignment -- applying them as a
+// second, overriding assignment silently did nothing. Args given on the command
+// line are already in params_keys and always win.
+fast_mode = (runmode == 'fast')
+
 if (!params_keys.contains('job_dispatch_args')) {
 	params.job_dispatch_args = ""
 }
 if (!params_keys.contains('preprocessing_args')) {
-	params.preprocessing_args = ""
+	params.preprocessing_args = fast_mode ? "--motion skip" : ""
 }
 if (!params_keys.contains('spikesorting_args')) {
 	params.spikesorting_args = ""
 }
 if (!params_keys.contains('postprocessing_args')) {
+	// Fast mode cannot skip postprocessing extensions: aind-ephys-postprocessing has
+	// never exposed a --skip-extensions flag (verified against the pinned commit
+	// afbc577c and upstream main). Passing one makes run_capsule.py exit 2.
 	params.postprocessing_args = ""
 }
 if (!params_keys.contains('unit_classifier_args')) {
-	params.unit_classifier_args = ""
+	params.unit_classifier_args = fast_mode ? "--skip-metrics-recomputation" : ""
 }
 if (!params_keys.contains('nwb_subject_args')) {
 	params.nwb_subject_args = ""
 }
 if (!params_keys.contains('nwb_ecephys_args')) {
-	params.nwb_ecephys_args = ""
+	params.nwb_ecephys_args = fast_mode ? "--skip-lfp" : ""
 }
 
-if (runmode == 'fast'){
-	params.preprocessing_args = "--motion skip"
-	params.postprocessing_args = "--skip-extensions spike_locations,principal_components"
-	params.unit_classifier_args = "--skip-metrics-recomputation"
-	params.nwb_ecephys_args = "--skip-lfp"
+if (fast_mode) {
 	println "Running in fast mode. Setting parameters:"
 	println "preprocessing_args: ${params.preprocessing_args}"
 	println "postprocessing_args: ${params.postprocessing_args}"
@@ -160,7 +190,7 @@ process job_dispatch {
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-job-dispatch.git" capsule-repo
 	git -C capsule-repo -c core.fileMode=false checkout d6bdb9cc02d6711790a5c406cd50c1434074b5e2 --quiet
 	mv capsule-repo/code capsule/code
-	rm -rf capsule-repo
+	rm -rf capsule-repo 2>/dev/null || true
 
 	echo "[${task.tag}] running capsule..."
 	cd capsule/code
@@ -181,8 +211,8 @@ process preprocessing {
 	tag 'preprocessing'
 	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
 
-	cpus 16
-	memory '64 GB'
+	cpus cpu_cores
+	memory cpu_mem
 	// Allocate 4x recording duration
 	time { max_duration_min.value.toFloat()*4 + 'm' }
 
@@ -213,7 +243,7 @@ process preprocessing {
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-preprocessing.git" capsule-repo
 	git -C capsule-repo -c core.fileMode=false checkout 8b993d495e6230b6b2aabfd4acff364679e864b8 --quiet
 	mv capsule-repo/code capsule/code
-	rm -rf capsule-repo
+	rm -rf capsule-repo 2>/dev/null || true
 
 	echo "[${task.tag}] allocated time: ${task.time}"
 
@@ -231,11 +261,11 @@ process spikesort_kilosort25 {
 	tag 'spikesort-kilosort25'
 	container 'file:///${CONTAINER_DIR}/aind-ephys-spikesort-kilosort25_si-0.101.2.sif'
 	containerOptions '--nv'
-	clusterOptions '-p <partition_name> -A <account_name> --gres=gpu:1'
+	clusterOptions gpu_cluster_options
 	module 'cuda'
 
-	cpus 16
-	memory '64 GB'
+	cpus gpu_cores
+	memory gpu_mem
 	// Allocate 4x recording duration
 	time { max_duration_min.value.toFloat()*4 + 'm' }
 
@@ -265,7 +295,7 @@ process spikesort_kilosort25 {
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-spikesort-kilosort25.git" capsule-repo
 	git -C capsule-repo -c core.fileMode=false checkout 8c8987260a27c75b1f523d306b40a16962a97ea6 --quiet
 	mv capsule-repo/code capsule/code
-	rm -rf capsule-repo
+	rm -rf capsule-repo 2>/dev/null || true
 
 	echo "[${task.tag}] allocated time: ${task.time}"
 
@@ -283,11 +313,11 @@ process spikesort_kilosort4 {
 	tag 'spikesort-kilosort4'
 	container 'file:///${CONTAINER_DIR}/aind-ephys-spikesort-kilosort4_si-0.101.2.sif'
 	containerOptions '--nv'
-        clusterOptions '-p <partition_name> -A <account_name> --gres=gpu:1'
+	clusterOptions gpu_cluster_options
 	module 'cuda'
 
-	cpus 16
-	memory '64 GB'
+	cpus gpu_cores
+	memory gpu_mem
 	// Allocate 4x recording duration
 	time { max_duration_min.value.toFloat()*4 + 'm' }
 
@@ -317,7 +347,7 @@ process spikesort_kilosort4 {
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-spikesort-kilosort4.git" capsule-repo
 	git -C capsule-repo -c core.fileMode=false checkout 6b4e6cd5bf90e05be7ce7e2de9a28f4dcfa02c29 --quiet
 	mv capsule-repo/code capsule/code
-	rm -rf capsule-repo
+	rm -rf capsule-repo 2>/dev/null || true
 
 	echo "[${task.tag}] allocated time: ${task.time}"
 
@@ -335,8 +365,8 @@ process spikesort_spykingcircus2 {
 	tag 'spikesort-spykingcircus2'
 	container 'file:///${CONTAINER_DIR}/aind-ephys-spikesort-spykingcircus2_si-0.101.2.sif'
 
-	cpus 16
-	memory '64 GB'
+	cpus cpu_cores
+	memory cpu_mem
 	// Allocate 4x recording duration
 	time { max_duration_min.value.toFloat()*4 + 'm' }
 
@@ -366,7 +396,7 @@ process spikesort_spykingcircus2 {
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-spikesort-spykingcircus2.git" capsule-repo
 	git -C capsule-repo -c core.fileMode=false checkout 1f88d6741e33bf9a0e6e23107c64f3c7ad17b5e4 --quiet
 	mv capsule-repo/code capsule/code
-	rm -rf capsule-repo
+	rm -rf capsule-repo 2>/dev/null || true
 
 	echo "[${task.tag}] allocated time: ${task.time}"
 
@@ -385,8 +415,8 @@ process postprocessing {
 	tag 'postprocessing'
 	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
 
-	cpus 16
-	memory '64 GB'
+	cpus cpu_cores
+	memory cpu_mem
 	// Allocate 4x recording duration
 	time { max_duration_min.value.toFloat()*4 + 'm' }
 
@@ -417,7 +447,7 @@ process postprocessing {
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-postprocessing.git" capsule-repo
 	git -C capsule-repo -c core.fileMode=false checkout afbc577c888c6213846eb52649ba8654b585f1af --quiet
 	mv capsule-repo/code capsule/code
-	rm -rf capsule-repo
+	rm -rf capsule-repo 2>/dev/null || true
 
 	echo "[${task.tag}] allocated time: ${task.time}"
 
@@ -462,7 +492,7 @@ process curation {
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-curation.git" capsule-repo
 	git -C capsule-repo -c core.fileMode=false checkout a8d31a85ceeedb903f19c5b8476cdaf8a8b750e6 --quiet
 	mv capsule-repo/code capsule/code
-	rm -rf capsule-repo
+	rm -rf capsule-repo 2>/dev/null || true
 
 	echo "[${task.tag}] allocated time: ${task.time}"
 
@@ -508,7 +538,7 @@ process unit_classifier {
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-unit-classifier.git" capsule-repo
 	git -C capsule-repo -c core.fileMode=false checkout a5f1e947c7099090cca2c8250b9bad0b796a67dd --quiet
 	mv capsule-repo/code capsule/code
-	rm -rf capsule-repo
+	rm -rf capsule-repo 2>/dev/null || true
 
 	echo "[${task.tag}] allocated time: ${task.time}"
 
@@ -528,7 +558,7 @@ process visualization {
 	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-base_si-0.101.2.sif'
 
 	cpus 4
-	memory '64 GB'
+	memory cpu_mem
 	// Allocate 2h per recording hour
 	time { max_duration_min.value.toFloat()*2 + 'm' }
 
@@ -560,7 +590,7 @@ process visualization {
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-visualization.git" capsule-repo
 	git -C capsule-repo -c core.fileMode=false checkout f58ab7cda7757b4703da049a160a5677c2cd9c54 --quiet
 	mv capsule-repo/code capsule/code
-	rm -rf capsule-repo
+	rm -rf capsule-repo 2>/dev/null || true
 
 	echo "[${task.tag}] allocated time: ${task.time}"
 
@@ -616,7 +646,7 @@ process results_collector {
 	git clone "https://github.com/AllenNeuralDynamics/aind-ephys-results-collector.git" capsule-repo
 	git -C capsule-repo -c core.fileMode=false checkout 73cb90e9c321a6c06012681ca08d93b71e99d952 --quiet
 	mv capsule-repo/code capsule/code
-	rm -rf capsule-repo
+	rm -rf capsule-repo 2>/dev/null || true
 
 	echo "[${task.tag}] allocated time: ${task.time}"
 
@@ -660,7 +690,7 @@ process nwb_subject {
 	git clone "https://github.com/AllenNeuralDynamics/aind-subject-nwb.git" capsule-repo
     git -C capsule-repo -c core.fileMode=false checkout 6a3615779353c733622c7e65cd8aea12622b4b35 --quiet
 	mv capsule-repo/code capsule/code
-	rm -rf capsule-repo
+	rm -rf capsule-repo 2>/dev/null || true
 
 	echo "[${task.tag}] allocated time: ${task.time}"
 
@@ -678,8 +708,8 @@ process nwb_ecephys {
 	tag 'nwb-ecephys'
 	container 'file:///${CONTAINER_DIR}/aind-ephys-pipeline-nwb_si-0.101.2.sif'
 
-	cpus 16
-	memory '64 GB'
+	cpus cpu_cores
+	memory cpu_mem
 	// Allocate 2x recording duration
 	time { max_duration_min.value.toFloat()*2 + 'm' }
 
@@ -706,7 +736,7 @@ process nwb_ecephys {
 	git clone "https://github.com/AllenNeuralDynamics/aind-ecephys-nwb.git" capsule-repo
 	git -C capsule-repo -c core.fileMode=false checkout 5bbb7a8dc57058f2040ea0b3957dd345ca302795 --quiet
 	mv capsule-repo/code capsule/code
-	rm -rf capsule-repo
+	rm -rf capsule-repo 2>/dev/null || true
 
 	echo "[${task.tag}] allocated time: ${task.time}"
 
@@ -756,7 +786,7 @@ process nwb_units {
 	git clone "https://github.com/AllenNeuralDynamics/aind-units-nwb.git" capsule-repo
 	git -C capsule-repo -c core.fileMode=false checkout b532ec8dc7d1dc8751bb4de80941772465aaecd9 --quiet
 	mv capsule-repo/code capsule/code
-	rm -rf capsule-repo
+	rm -rf capsule-repo 2>/dev/null || true
 
 	echo "[${task.tag}] allocated time: ${task.time}"
 
